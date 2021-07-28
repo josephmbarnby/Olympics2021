@@ -1,4 +1,6 @@
 #Loads libraries
+setwd('/Users/josephbarnby/My Drive/Dropbox/Olympics2021')
+
 
 library(tidyverse)
 library(ggExtra)
@@ -14,6 +16,8 @@ lapply(libload, library, character.only = TRUE)
 library(png)
 library(grid)
 library(extrafont)
+library(ggflags)
+library(ggtext)
 
 # load data
 #content <- read_html("https://olympics.com/tokyo-2020/olympic-games/en/results/all-sports/medal-standings.htm")
@@ -49,6 +53,8 @@ Abrv   <- data.frame(Abrv = wide_data$Abrv,
 
 long_data <- Odata %>% # turn regular data into long data
   plyr::join(Abrv, by = 'Country') %>%
+  mutate(Name = ifelse(Name == 'Daiz', 'Daisy',
+                       ifelse(Name == 'G', 'Georgie', Name))) %>%
   group_by(Name, Year, Medal) %>%
   mutate(MedSumPP = sum(Count)) %>%
   group_by(Country, Year) %>%
@@ -70,7 +76,8 @@ wide_data <- long_data %>% # turn long data into wide data for summaries
   mutate(TotalMedal2016 = sum(`2016`),
          TotalMedal2021 = sum(`2021`),
          TotalRawNoTotal = TotalMedal2021-TotalMedal2016,
-         TotalPercTotal = (TotalRawNoTotal/TotalMedal2016)*100)
+         TotalPercTotal = (TotalRawNoTotal/TotalMedal2016)*100,
+         Highest = ifelse(PercChangeTotal == max(PercChangeTotal), 'yes', 'no'))
 wide_data
 #Summaries
 wide_data %>%
@@ -90,15 +97,28 @@ x <- wide_data %>%
   arrange(-totalPer) %>%
   slice(1:3)
 
-y <- ggplot(wide_data %>% filter(Medal == 'G')) +
-  geom_segment( aes(y=Abrv, yend=Abrv, x=0, xend=PercChangeTotal), color="grey")+
+y <- ggplot(wide_data %>% filter(Medal == 'G'),
+            aes(y=reorder(Abrv, PercChangeTotal))) +
+  #background_image(logo)+
+  geom_segment( aes(yend=reorder(Abrv, PercChangeTotal), x=0, xend=PercChangeTotal), color="grey")+
   geom_vline(xintercept = 0, color = '#0085C7')+
-  geom_point( aes(x=PercChangeTotal, y=Abrv), color='#DF0024', size=5 ) +
-  geom_flag(aes(x=-145, y=Abrv, country = Abrv2)) +
-  facet_wrap(~Name, scales = 'free_y', nrow = 2)+
+  geom_point( aes(x=PercChangeTotal), color= '#DF0024', size=5 ) +
+  geom_point(data = wide_data %>% filter(PercChangeTotal == max(PercChangeTotal), PercChangeTotal != -100),
+             aes(x=PercChangeTotal), color= '#F4C300', size=5 ) +
+  geom_flag(aes(x=-145, country = Abrv2)) +
+  facet_wrap(~reorder(Name, -TotalPercTotal), scales = 'free_y', nrow = 2)+
   theme_void(base_family = "Poppins")+
   coord_cartesian(xlim = c(-150,150), clip = 'off')+
   scale_x_continuous(breaks = c(-100, -50, 0, 50, 100), labels = c(-100, "", 0, "", 100))+
+  geom_text_repel(aes(x = PercChangeTotal, y = Abrv,
+                       label = ifelse(PercChangeTotal == max(PercChangeTotal), 'Best relative
+performance', NA)),
+                   size = 3, arrow = arrow(type = 'closed', length = unit(0.1, 'cm')),
+                   box.padding = unit(0.35, "lines"), point.padding = unit(0.5, "lines"),
+                   segment.color = 'black', family = 'Poppins', max.overlaps = Inf,
+                   nudge_x = 400,
+                   nudge_y = -0.5,
+                   )+
   theme(
     legend.position = "none",
     axis.text = element_text(size = 14),
@@ -123,11 +143,11 @@ y <- ggplot(wide_data %>% filter(Medal == 'G')) +
   ylab("")
 #009F3D olympic green
 y
-grid.raster(logo, x = 0.9, 0.89, width = unit(2.7, 'cm'), height = unit(2.8, 'cm'))
+grid.raster(logo, x = 0.89, 0.89, width = unit(2.7, 'cm'), height = unit(2.8, 'cm'))
 
-grid.raster(gold, x = 0.23, 0.435, width = unit(0.6, 'cm'), height = unit(0.6, 'cm'))
-grid.raster(silv, x = 0.23, 0.75, width = unit(0.5, 'cm'), height = unit(0.5, 'cm'))
-grid.raster(bron, x = 0.46,  0.75, width = unit(0.6, 'cm'), height = unit(0.6, 'cm'))
+grid.raster(gold, x = 0.235, 0.757, width = unit(0.6, 'cm'), height = unit(0.6, 'cm'))
+grid.raster(silv, x = 0.48, 0.757, width = unit(0.5, 'cm'), height = unit(0.5, 'cm'))
+grid.raster(bron, x = 0.725,  0.757, width = unit(0.5, 'cm'), height = unit(0.5, 'cm'))
 
 # Total Percentages of Bronze Medals --------------------------------------
 
@@ -169,7 +189,7 @@ y2 <- ggplot(wide_data %>%
       #hi.fill = "#F4C300",
       hi.box.col = "black"
     ),
-    plot.caption = element_markdown(face = 'italic', margin = margin(20, 5, 5, 5)),
+    plot.caption = element_markdown(face = 'italic', margin = margin(20, 1, 1, 1)),
     plot.title = element_markdown(face = 'bold'),
     plot.subtitle = element_text(margin = margin(10, 10, 20, 10)),
     plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm"),
@@ -181,7 +201,7 @@ y2 <- ggplot(wide_data %>%
   ylab("")
 #009F3D olympic green
 y2
-grid.raster(logo, x = 0.9, 0.89, width = unit(2, 'cm'), height = unit(2.1, 'cm'))
+grid.raster(logo, x = 0.9, 0.9, width = unit(2, 'cm'), height = unit(2.1, 'cm'))
 
 grid.raster(gold, x = 0.46,  0.455, width = unit(0.6, 'cm'), height = unit(0.6, 'cm'))
 grid.raster(silv, x = 0.23, 0.79, width = unit(0.5, 'cm'), height = unit(0.5, 'cm'))
@@ -260,7 +280,6 @@ z +
                 right = 0.7,
                 top = 0.6, on_top = F)
 
-
 # Change in medals per week -----------------------------------------------
 wide_data$Week = '1/1/2021'
 wide_data2 <- wide_data %>% mutate(Week = '2/1/2021', TotalMed2016 = rep(rep(round(rnorm(1,50, 5),0), 3), 3), TotalMed2021 = rep(rep(round(rnorm(1,50, 5),0), 3), 3))
@@ -294,12 +313,13 @@ home <- ggplot(wide_data %>% filter(Medal == 'G')) +
   #facet_wrap(~Name, scales = 'free_y', nrow = 2)+
   theme_void(base_family = "Poppins")+
   coord_cartesian(xlim = c(-100,100), clip = 'off')+
-  scale_x_continuous(breaks = c(-100, -50, 0, 50, 100), labels = c(-100, -50, 0, 50, 100))+
+  scale_x_continuous(breaks = c(-100, -50, 0, 50, 100),
+                     labels = c(-100, -50, 0, 50, 100))+
   theme(
     legend.position = "none",
     axis.text = element_text(size = 14),
     strip.background = element_blank(),
-    plot.caption = element_markdown(face = 'italic', margin = margin(20, 5, 5, 5)),
+    plot.caption = element_markdown(face = 'italic', margin = margin(20, 1, 1, 10)),
     plot.title = element_markdown(face = 'bold'),
     plot.subtitle = element_text(margin = margin(10, 10, 20, 10)),
     plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm"),
@@ -308,7 +328,7 @@ home <- ggplot(wide_data %>% filter(Medal == 'G')) +
   )+
   labs(title = "Percentage change in total medals won between <br> the <span style='color:#0085C7'>2016</span> and <span style='color:#DF0024'>2020</span> Olympics",
        subtitle = 'Data from Olympic Committee 2021',
-       caption = "<span style='color:#0085C7'>(C) J.M.Barnby, 2021</span>")+
+       caption = "<span style='color:#0085C7'>(C) J.M.Barnby [2021] website : joebarnby.com</span>")+
   xlab("Total Number of Medals") +
   ylab("")
 #009F3D olympic green
