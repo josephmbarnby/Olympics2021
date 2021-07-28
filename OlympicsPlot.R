@@ -19,6 +19,41 @@ library(extrafont)
 library(ggflags)
 library(ggtext)
 
+
+# Clean data function -----------------------------------------------------
+
+# manipulate
+cleanOlympic <- function(X){
+  long_data <- X %>% # turn regular data into long data
+    plyr::join(Abrv, by = 'Country') %>%
+    mutate(Name = ifelse(Name == 'Daiz', 'Daisy',
+                         ifelse(Name == 'G', 'Georgie', Name))) %>%
+    group_by(Name, Year, Medal) %>%
+    mutate(MedSumPP = sum(Count)) %>%
+    group_by(Country, Year) %>%
+    mutate(MedSumPC = sum(Count)) %>%
+    group_by(Name) %>%
+    distinct()
+  long_data
+
+  wide_data <- long_data %>% # turn long data into wide data for summaries
+    pivot_wider(id_cols = c(Name, Country, Abrv, Abrv2, Medal), names_from = 'Year', values_from = 'Count') %>%
+    mutate(RawNoChange = `2021`-`2016`,
+           PercChange  = (RawNoChange/`2016`)*100) %>%
+    group_by(Name, Country) %>%
+    mutate(TotalMed2016 = sum(`2016`),
+           TotalMed2021 = sum(`2021`),
+           RawNoChangeTotal = TotalMed2021-TotalMed2016,
+           PercChangeTotal = (RawNoChangeTotal/TotalMed2016)*100) %>%
+    group_by(Name) %>%
+    mutate(TotalMedal2016 = sum(`2016`),
+           TotalMedal2021 = sum(`2021`),
+           TotalRawNoTotal = TotalMedal2021-TotalMedal2016,
+           TotalPercTotal = (TotalRawNoTotal/TotalMedal2016)*100,
+           Highest = ifelse(PercChangeTotal == max(PercChangeTotal), 'yes', 'no'))
+  return(wide_data)
+}
+
 # load data
 #content <- read_html("https://olympics.com/tokyo-2020/olympic-games/en/results/all-sports/medal-standings.htm")
 #tables <- content %>% html_table(fill = TRUE)
@@ -38,6 +73,10 @@ library(ggtext)
 #  pivot_longer(3:5, 'Medal', values_to = 'Count') %>%
 #  dplyr::select(2, 7, 8, 6)
 #
+
+
+# Load data ---------------------------------------------------------------
+
 Odata <- read_csv('Sweepstake Logic Example - Sheet1.csv')
 #tables <- tables %>%
 #  plyr::join(Odata %>% dplyr::select(Name, Country), by = 'Country') %>%
@@ -49,37 +88,8 @@ Odata <- read_csv('Sweepstake Logic Example - Sheet1.csv')
 Abrv   <- data.frame(Abrv = wide_data$Abrv,
                      Country = wide_data$Country,
                      Abrv2 = wide_data$Abrv2)
-# manipulate
-
-long_data <- Odata %>% # turn regular data into long data
-  plyr::join(Abrv, by = 'Country') %>%
-  mutate(Name = ifelse(Name == 'Daiz', 'Daisy',
-                       ifelse(Name == 'G', 'Georgie', Name))) %>%
-  group_by(Name, Year, Medal) %>%
-  mutate(MedSumPP = sum(Count)) %>%
-  group_by(Country, Year) %>%
-  mutate(MedSumPC = sum(Count)) %>%
-  group_by(Name) %>%
-  distinct()
-long_data
-
-wide_data <- long_data %>% # turn long data into wide data for summaries
-  pivot_wider(id_cols = c(Name, Country, Abrv, Abrv2, Medal), names_from = 'Year', values_from = 'Count') %>%
-  mutate(RawNoChange = `2021`-`2016`,
-         PercChange  = (RawNoChange/`2016`)*100) %>%
-  group_by(Name, Country) %>%
-  mutate(TotalMed2016 = sum(`2016`),
-         TotalMed2021 = sum(`2021`),
-         RawNoChangeTotal = TotalMed2021-TotalMed2016,
-         PercChangeTotal = (RawNoChangeTotal/TotalMed2016)*100) %>%
-  group_by(Name) %>%
-  mutate(TotalMedal2016 = sum(`2016`),
-         TotalMedal2021 = sum(`2021`),
-         TotalRawNoTotal = TotalMedal2021-TotalMedal2016,
-         TotalPercTotal = (TotalRawNoTotal/TotalMedal2016)*100,
-         Highest = ifelse(PercChangeTotal == max(PercChangeTotal), 'yes', 'no'))
-wide_data
 #Summaries
+wide_data <- cleanOlympic(Odata)
 wide_data %>%
   summarise(totalPer = mean(TotalPercTotal))
 
@@ -167,11 +177,11 @@ y2 <- ggplot(wide_data %>%
                plyr::join(x2, by = 'Name') %>%
                mutate(xend = (`2021`/TotalMed2021)*100,
                       xend = ifelse(is.na(xend), 0, xend))) +
-  geom_segment(aes(y=Abrv, yend=Abrv, x=0, xend=xend), color="grey")+
+  geom_segment(aes(y=Abrv, yend=reorder(Abrv, xend), x=0, xend=xend), color="grey")+
   geom_vline(xintercept = 0, color = '#0085C7')+
-  geom_point(aes(x=xend, y=Abrv), color='#6A3805', size=5 ) +
-  geom_flag(aes(x=xend, y=Abrv, country = Abrv2)) +
-  facet_wrap(~Name, scales = 'free_y', nrow = 2)+
+  geom_point(aes(x=xend, y=reorder(Abrv, xend)), color='#6A3805', size=5 ) +
+  geom_flag(aes(x=xend, y=reorder(Abrv, xend), country = Abrv2)) +
+  facet_wrap(~reorder(Name, -xend), scales = 'free_y', nrow = 2)+
   theme_void(base_family = "Poppins")+
   coord_cartesian(xlim = c(0,100), clip = 'off')+
   #geom_label(x = 90, y = 3,
@@ -281,26 +291,74 @@ z +
                 top = 0.6, on_top = F)
 
 # Change in medals per week -----------------------------------------------
-wide_data$Week = '1/1/2021'
-wide_data2 <- wide_data %>% mutate(Week = '2/1/2021', TotalMed2016 = rep(rep(round(rnorm(1,50, 5),0), 3), 3), TotalMed2021 = rep(rep(round(rnorm(1,50, 5),0), 3), 3))
-wide_data3 <- wide_data %>% mutate(Week = '3/1/2021', TotalMed2016 = rep(rep(round(rnorm(1,50, 5),0), 3), 3), TotalMed2021 = rep(rep(round(rnorm(1,50, 5),0), 3), 3))
-wide_data4 <- wide_data %>% mutate(Week = '4/1/2021', TotalMed2016 = rep(rep(round(rnorm(1,50, 5),0), 3), 3), TotalMed2021 = rep(rep(round(rnorm(1,50, 5),0), 3), 3))
+wide_data2 <-read.csv('/Users/josephbarnby/My Drive/Dropbox/Olympics2021/Sweepstake Logic Example - Sheet1 - 27:07:21.csv')
+wide_data2 <- cleanOlympic(wide_data2)
+wide_data2$day= Sys.Date()-2
+wide_data3 <-read.csv('/Users/josephbarnby/My Drive/Dropbox/Olympics2021/Sweepstake Logic Example - Sheet1 - 28:07:21.csv')
+wide_data3 <- cleanOlympic(wide_data3)
+wide_data3$day= Sys.Date()-1
 
-wide_data_long <- rbind(wide_data, wide_data2, wide_data3, wide_data4)
+wide_data$day = Sys.Date()
+
+wide_data_long <- rbind(wide_data, wide_data2, wide_data3)
 
 wide_data_plot <- wide_data_long %>%
-  group_by(Name, Week) %>%
-  mutate(Week = as.Date(Week),
+  group_by(Name, day) %>%
+  mutate(Day = as.Date(day),
          meanTotMed2016 = mean(TotalMed2016),
          meanTotMed2021 = mean(TotalMed2021),
          diffTotMed     = meanTotMed2021-meanTotMed2016,
          perDiffTotMed  = (diffTotMed/meanTotMed2016)*100)
 
 ggplot(wide_data_plot,
-       aes(Week, perDiffTotMed, color= Name))+
-  geom_line(size = 2)+
-  geom_point()
+       aes(Day, perDiffTotMed, color= Name))+
+  geom_text_repel(data = wide_data_plot %>%
+                    filter(day == Sys.Date()),
+    nudge_x = 5,
+    direction = "y",
+    hjust = "right",
+    aes(label = Name),
+    max.overlaps = 0
+  ) +
+  labs(title = "Percentage change in total medals won between <br> the <span style='color:#0085C7'>2016</span> and <span style='color:#DF0024'>2021</span> Olympics",
+       subtitle = 'Data from Olympic Committee 2021',
+       caption = "<span style='color:#0085C7'>(C) J.M.Barnby, 2021</span>",
+       x = 'Date')+
+  coord_cartesian(clip = 'off')+
+  geom_line(size = 1, aes(color = ifelse(perDiffTotMed != max(perDiffTotMed), NA, Name), group = Name))+
+  geom_point(data = wide_data_plot %>% filter(day == Sys.Date()),
+             aes(color = ifelse(day != Sys.Date(), NA, '#DF0024')), size = 2)+
+  theme(legend.position = 'none',
+        plot.title = element_markdown(),
+        plot.caption = element_markdown(),
+        axis.title.y = element_blank(),
+        plot.margin = margin(0,2,0,0, unit = 'cm'),
+        panel.background = element_blank())
 
+ggplot(wide_data_plot %>% ungroup(),
+       aes(Day, PercChangeTotal))+
+  geom_text_repel(data = wide_data_plot %>%
+                    filter(day == Sys.Date()),
+                  nudge_x = 10,
+                  direction = "x",
+                  aes(label = Country),
+                  max.overlaps = 0
+  ) +
+  labs(title = "Percentage change in total medals won between <br> the <span style='color:#0085C7'>2016</span> and <span style='color:#DF0024'>2021</span> Olympics",
+       subtitle = 'Data from Olympic Committee 2021',
+       caption = "<span style='color:#0085C7'>(C) J.M.Barnby, 2021</span>",
+       x = 'Date')+
+  coord_cartesian(clip = 'off')+
+  geom_line(size = 1, aes(group = Country), color = ifelse(wide_data_plot$PercChangeTotal == max(wide_data_plot['day' == Sys.Date()]$PercChangeTotal), 'gold', 'grey'))+
+  geom_point(data = wide_data_plot %>% filter(day == Sys.Date()),
+             aes(color = ifelse(day != Sys.Date(), NA, '#DF0024')), size = 2)+
+  theme(legend.position = 'none',
+        plot.title = element_markdown(size = 16),
+        plot.caption = element_markdown(),
+        axis.title.y = element_blank(),
+        plot.margin = margin(0,2,0,0, unit = 'cm'),
+        panel.background = element_blank(),
+        axis.text = element_text(size = 14))
 
 # For Homepage ------------------------------------------------------------
 
