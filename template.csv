@@ -1,0 +1,145 @@
+id_country,Country,id_medal,Medal,Count,Year
+USA,United States,NA,G,46,2016
+USA,United States,NA,S,37,2016
+USA,United States,NA,B,38,2016
+USA,United States,Gold,G,0,2021
+USA,United States,Silvers,S,0,2021
+USA,United States,Bronze,B,0,2021
+Russian Olympic Committee,Russia,NA,G,19,2016
+Russian Olympic Committee,Russia,NA,S,17,2016
+Russian Olympic Committee,Russia,NA,B,20,2016
+Russian Olympic Committee,Russia,Gold,G,11,2021
+Russian Olympic Committee,Russia,Silvers,S,15,2021
+Russian Olympic Committee,Russia,Bronze,B,11,2021
+France,France,NA,G,10,2016
+France,France,NA,S,18,2016
+France,France,NA,B,14,2016
+France,France,Gold,G,4,2021
+France,France,Silvers,S,9,2021
+France,France,Bronze,B,6,2021
+China,China,NA,G,26,2016
+China,China,NA,S,18,2016
+China,China,NA,B,26,2016
+China,China,Gold,G,21,2021
+China,China,Silvers,S,13,2021
+China,China,Bronze,B,12,2021
+Denmark,Denmark,NA,G,2,2016
+Denmark,Denmark,NA,S,6,2016
+Denmark,Denmark,NA,B,7,2016
+Denmark,Denmark,Gold,G,0,2021
+Denmark,Denmark,Silvers,S,1,2021
+Denmark,Denmark,Bronze,B,1,2021
+Kazakhstan,Kazakhstan,NA,G,3,2016
+Kazakhstan,Kazakhstan,NA,S,5,2016
+Kazakhstan,Kazakhstan,NA,B,10,2016
+Kazakhstan,Kazakhstan,Gold,G,0,2021
+Kazakhstan,Kazakhstan,Silvers,S,0,2021
+Kazakhstan,Kazakhstan,Bronze,B,3,2021
+Jamaica,Jamaica,NA,G,6,2016
+Jamaica,Jamaica,NA,S,3,2016
+Jamaica,Jamaica,NA,B,2,2016
+Jamaica,Jamaica,Gold,G,0,2021
+Jamaica,Jamaica,Silvers,S,0,2021
+Jamaica,Jamaica,Bronze,B,0,2021
+Kenya,Kenya,NA,G,6,2016
+Kenya,Kenya,NA,S,6,2016
+Kenya,Kenya,NA,B,1,2016
+Kenya,Kenya,Gold,G,0,2021
+Kenya,Kenya,Silvers,S,0,2021
+Kenya,Kenya,Bronze,B,0,2021
+Azerbaijan,Azerbaijan,NA,G,1,2016
+Azerbaijan,Azerbaijan,NA,S,7,2016
+Azerbaijan,Azerbaijan,NA,B,10,2016
+Azerbaijan,Azerbaijan,Gold,G,0,2021
+Azerbaijan,Azerbaijan,Silvers,S,0,2021
+Azerbaijan,Azerbaijan,Bronze,B,0,2021
+Great Britain,Great Britain,NA,G,27,2016
+Great Britain,Great Britain,NA,S,23,2016
+Great Britain,Great Britain,NA,B,17,2016
+Great Britain,Great Britain,Gold,G,8,2021
+Great Britain,Great Britain,Silvers,S,9,2021
+Great Britain,Great Britain,Bronze,B,11,2021
+Australia,Australia,NA,G,8,2016
+Australia,Australia,NA,S,11,2016
+Australia,Australia,NA,B,10,2016
+Australia,Australia,Gold,G,10,2021
+Australia,Australia,Silvers,S,3,2021
+Australia,Australia,Bronze,B,14,2021
+Italy,Italy,NA,G,8,2016
+Italy,Italy,NA,S,12,2016
+Italy,Italy,NA,B,8,2016
+Italy,Italy,Gold,G,2,2021
+Italy,Italy,Silvers,S,8,2021
+Italy,Italy,Bronze,B,14,2021
+South Korea,South Korea,NA,G,9,2016
+South Korea,South Korea,NA,S,3,2016
+South Korea,South Korea,NA,B,9,2016
+South Korea,South Korea,Gold,G,5,2021
+South Korea,South Korea,Silvers,S,4,2021
+South Korea,South Korea,Bronze,B,7,2021
+Sweden,Sweden,NA,G,2,2016
+Sweden,Sweden,NA,S,6,2016
+Sweden,Sweden,NA,B,3,2016
+Sweden,Sweden,Gold,G,1,2021
+Sweden,Sweden,Silvers,S,1,2021
+Sweden,Sweden,Bronze,B,0,2021
+Brazil,Brazil,NA,G,7,2016
+Brazil,Brazil,NA,S,6,2016
+Brazil,Brazil,NA,B,6,2016
+Brazil,Brazil,Gold,G,1,2021
+Brazil,Brazil,Silvers,S,3,2021
+Brazil,Brazil,Bronze,B,4,2021
+Spain,Spain,NA,G,7,2016
+Spain,Spain,NA,S,4,2016
+Spain,Spain,NA,B,6,2016
+Spain,Spain,Gold,G,1,2021
+Spain,Spain,Silvers,S,2,2021
+Spain,Spain,Bronze,B,2,2021
+Ukraine,Ukraine,NA,G,2,2016
+Ukraine,Ukraine,NA,S,5,2016
+Ukraine,Ukraine,NA,B,4,2016
+Ukraine,Ukraine,Gold,G,0,2021
+Ukraine,Ukraine,Silvers,S,0,2021
+Ukraine,Ukraine,Bronze,B,5,2021
+New Zealand,New Zealand,NA,G,4,2016
+New Zealand,New Zealand,NA,S,9,2016
+New Zealand,New Zealand,NA,B,5,2016
+New Zealand,New Zealand,Gold,G,4,2021
+New Zealand,New Zealand,Silvers,S,3,2021
+New Zealand,New Zealand,Bronze,B,3,2021
+Germany,Germany,NA,G,17,2016
+Germany,Germany,NA,S,10,2016
+Germany,Germany,NA,B,15,2016
+Germany,Germany,Gold,G,3,2021
+Germany,Germany,Silvers,S,4,2021
+Germany,Germany,Bronze,B,10,2021
+Netherlands,Netherlands,NA,G,8,2016
+Netherlands,Netherlands,NA,S,7,2016
+Netherlands,Netherlands,NA,B,4,2016
+Netherlands,Netherlands,Gold,G,4,2021
+Netherlands,Netherlands,Silvers,S,7,2021
+Netherlands,Netherlands,Bronze,B,5,2021
+Uzbekistan,Uzbekistan,NA,G,4,2016
+Uzbekistan,Uzbekistan,NA,S,2,2016
+Uzbekistan,Uzbekistan,NA,B,7,2016
+Uzbekistan,Uzbekistan,Gold,G,1,2021
+Uzbekistan,Uzbekistan,Silvers,S,0,2021
+Uzbekistan,Uzbekistan,Bronze,B,1,2021
+Hungary,Hungary,NA,G,8,2016
+Hungary,Hungary,NA,S,3,2016
+Hungary,Hungary,NA,B,4,2016
+Hungary,Hungary,Gold,G,2,2021
+Hungary,Hungary,Silvers,S,2,2021
+Hungary,Hungary,Bronze,B,2,2021
+Cuba,Cuba,NA,G,5,2016
+Cuba,Cuba,NA,S,2,2016
+Cuba,Cuba,NA,B,4,2016
+Cuba,Cuba,Gold,G,0,2021
+Cuba,Cuba,Silvers,S,1,2021
+Cuba,Cuba,Bronze,B,1,2021
+Canada,Canada,NA,G,4,2016
+Canada,Canada,NA,S,3,2016
+Canada,Canada,NA,B,15,2016
+Canada,Canada,Gold,G,3,2021
+Canada,Canada,Silvers,S,4,2021
+Canada,Canada,Bronze,B,5,2021

@@ -1,18 +1,9 @@
 #Loads libraries
-setwd('/Users/josephbarnby/My Drive/Dropbox/Olympics2021')
-
-
 library(tidyverse)
 library(ggExtra)
 library(ggrepel)
 library(ggpubr)
 library(ggforce)
-libload <- c("tidyverse", "colorspace", "corrr",  "cowplot",
-                   "ggdark", "ggforce", "ggrepel", "ggridges", "ggsci",
-                   "ggtext", "ggthemes", "grid", "gridExtra", "patchwork",
-                   "rcartocolor", "scico", "showtext", "shiny",
-                   "plotly", "highcharter", "echarts4r")
-lapply(libload, library, character.only = TRUE)
 library(png)
 library(grid)
 library(extrafont)
@@ -23,24 +14,25 @@ library(ggtext)
 # Clean data function -----------------------------------------------------
 
 # manipulate
-cleanOlympic <- function(X){
+cleanOlympic_long <- function(X){
   long_data <- X %>% # turn regular data into long data
     plyr::join(Abrv, by = 'Country') %>%
-    mutate(Name = ifelse(Name == 'Daiz', 'Daisy',
-                         ifelse(Name == 'G', 'Georgie', Name))) %>%
-    group_by(Name, Year, Medal) %>%
+    group_by(Year, Medal) %>%
     mutate(MedSumPP = sum(Count)) %>%
     group_by(Country, Year) %>%
     mutate(MedSumPC = sum(Count)) %>%
-    group_by(Name) %>%
     distinct()
   long_data
+  return(long_data)
+}
 
-  wide_data <- long_data %>% # turn long data into wide data for summaries
-    pivot_wider(id_cols = c(Name, Country, Abrv, Abrv2, Medal), names_from = 'Year', values_from = 'Count') %>%
+cleanOlympic_wide <- function(X){
+
+  wide_data <- X %>% # turn long data into wide data for summaries
+    pivot_wider(id_cols = c(Country, Abrv, Abrv2, Medal), names_from = 'Year', values_from = 'Count') %>%
     mutate(RawNoChange = `2021`-`2016`,
            PercChange  = (RawNoChange/`2016`)*100) %>%
-    group_by(Name, Country) %>%
+    group_by(Country) %>%
     mutate(TotalMed2016 = sum(`2016`),
            TotalMed2021 = sum(`2021`),
            RawNoChangeTotal = TotalMed2021-TotalMed2016,
@@ -54,53 +46,59 @@ cleanOlympic <- function(X){
   return(wide_data)
 }
 
-# load data
-#content <- read_html("https://olympics.com/tokyo-2020/olympic-games/en/results/all-sports/medal-standings.htm")
-#tables <- content %>% html_table(fill = TRUE)
-#tables <- tables[[1]]
-#tables <- tables %>%
-#  rename(Country = 2, G = 3, S = 4, B = 5) %>%
-#  mutate(Country = ifelse(Country == 'United States of America', 'United States',
-#                          ifelse(Country == "People's Republic of China", 'China',
-#                                 ifelse(Country == 'ROC', 'Russia',
-#                                        ifelse(Country == 'Republic of Korea', 'South Korea', Country)))),
-#         Year = 2021) %>%
-#  add_row(Country = 'Jamaica',    G = 0, S = 0, B = 0, NOCCode = 'JAM') %>%
-#  add_row(Country = 'Cuba',       G = 0, S = 0, B = 0, NOCCode = 'CUB') %>%
-#  add_row(Country = 'Brazil',     G = 0, S = 0, B = 0, NOCCode = 'BRA') %>%
-#  add_row(Country = 'Sweden',     G = 0, S = 0, B = 0, NOCCode = 'SWE') %>%
-#  add_row(Country = 'Kenya',      G = 0, S = 0, B = 0, NOCCode = 'KEN') %>%
-#  pivot_longer(3:5, 'Medal', values_to = 'Count') %>%
-#  dplyr::select(2, 7, 8, 6)
-#
+# Scrape data from IOC website --------------------------------------------
+scrapeOlympic <- function(){
 
+content <- read_html("https://olympics.com/tokyo-2020/olympic-games/en/results/all-sports/medal-standings.htm")
+tables <- content %>% html_table(fill = TRUE)
+tables <- tables[[1]]
+tables <- tables %>%
+  rename(Country = 2, G = 3, S = 4, B = 5) %>%
+  mutate(Country = ifelse(Country == 'United States of America', 'United States',
+                          ifelse(Country == "People's Republic of China", 'China',
+                                 ifelse(Country == 'ROC', 'Russia',
+                                        ifelse(Country == 'Republic of Korea', 'South Korea', Country)))),
+         Year = 2021) %>%
+  pivot_longer(3:5, 'Medal', values_to = 'Count') %>%
+  dplyr::select(2, 7, 8, 6)
 
 # Load data ---------------------------------------------------------------
 
-Odata <- read_csv('Sweepstake Logic Example - Sheet1.csv')
-#tables <- tables %>%
-#  plyr::join(Odata %>% dplyr::select(Name, Country), by = 'Country') %>%
-#  na.omit() %>%
-#  distinct() %>%
-#  dplyr::select(Name, 1,2,3,4)
+Odata <- read_csv('template.csv')
+tables <- tables %>%
+  plyr::join(Odata %>% dplyr::select(Country), by = 'Country') %>%
+  na.omit() %>%
+  distinct() %>%
+  dplyr::select(1,2,3,4)
 
-#Odata <- Odata %>% filter(Year == '2016') %>% rbind(tables)
+Odata <- Odata %>%
+  filter(Year == '2016') %>%
+  dplyr::select(Country, Medal, Count, Year) %>%
+  rbind(tables)
 Abrv   <- data.frame(Abrv = wide_data$Abrv,
                      Country = wide_data$Country,
                      Abrv2 = wide_data$Abrv2)
 #Summaries
-wide_data <- cleanOlympic(Odata)
+long_data <- cleanOlympic_long(Odata)
+wide_data <- cleanOlympic_wide(long_data)
 wide_data %>%
   summarise(totalPer = mean(TotalPercTotal))
 
+return(wide_data)
+}
+
+wide_data <- scrapeOlympic()
+
 # Total % Change in Medals Per Country ------------------------------------
 require(magick)
+font_add_google("Poppins")
+showtext_auto()
 
 logo <- image_read("hpolympics.png", 'none')
 gold <- image_read("GoldOlympics.png", 'none')
 silv <- image_read("SilverOlympics.png", 'none')
 bron <- image_read("BronzeOlympics.png", 'none')
-#g <- rasterGrob(img, interpolate=TRUE)
+g    <- rasterGrob(logo, interpolate=TRUE)
 
 x <- wide_data %>%
   summarise(totalPer = mean(TotalPercTotal)) %>%
@@ -129,6 +127,8 @@ performance', NA)),
                    nudge_x = 400,
                    nudge_y = -0.5,
                    )+
+  geom_text(aes(x = PercChangeTotal, y = Abrv, label = round(PercChangeTotal,1)),
+            check_overlap = T, nudge_y = 0.3, size = 3)+
   theme(
     legend.position = "none",
     axis.text = element_text(size = 14),
@@ -153,73 +153,16 @@ performance', NA)),
   ylab("")
 #009F3D olympic green
 y
-grid.raster(logo, x = 0.89, 0.89, width = unit(2.7, 'cm'), height = unit(2.8, 'cm'))
+grid.raster(logo, x = 0.89, 0.92, width = unit(2.7, 'cm'), height = unit(2.8, 'cm'))
 
-grid.raster(gold, x = 0.235, 0.757, width = unit(0.6, 'cm'), height = unit(0.6, 'cm'))
-grid.raster(silv, x = 0.48, 0.757, width = unit(0.5, 'cm'), height = unit(0.5, 'cm'))
-grid.raster(bron, x = 0.725,  0.757, width = unit(0.5, 'cm'), height = unit(0.5, 'cm'))
-
-# Total Percentages of Bronze Medals --------------------------------------
-
-x2 <- wide_data %>%
-  group_by(Name) %>%
-  filter(Medal == 'B') %>%
-  mutate(
-    totBronze = sum(`2021`),
-    totalPer = (totBronze/TotalMedal2021)*100,
-    totalPer = ifelse(is.na(totalPer), 0, totalPer)) %>%
-  ungroup() %>%
-  dplyr::select(Name, totalPer) %>%
-  distinct()
-
-y2 <- ggplot(wide_data %>%
-               filter(Medal == 'B') %>%
-               plyr::join(x2, by = 'Name') %>%
-               mutate(xend = (`2021`/TotalMed2021)*100,
-                      xend = ifelse(is.na(xend), 0, xend))) +
-  geom_segment(aes(y=Abrv, yend=reorder(Abrv, xend), x=0, xend=xend), color="grey")+
-  geom_vline(xintercept = 0, color = '#0085C7')+
-  geom_point(aes(x=xend, y=reorder(Abrv, xend)), color='#6A3805', size=5 ) +
-  geom_flag(aes(x=xend, y=reorder(Abrv, xend), country = Abrv2)) +
-  facet_wrap(~reorder(Name, -xend), scales = 'free_y', nrow = 2)+
-  theme_void(base_family = "Poppins")+
-  coord_cartesian(xlim = c(0,100), clip = 'off')+
-  #geom_label(x = 90, y = 3,
-  #           aes(label = round(totalPer,1)))+
-  theme(
-    legend.position = "none",
-    axis.text = element_text(size = 14),
-    strip.background = element_blank(),
-    strip.text = element_textbox_highlight(
-      size = 12,
-      fill = "white", box.color = "black", color = "black",
-      halign = .5, linetype = 1, r = unit(5, "pt"), width = unit(2, "npc"),
-      padding = margin(5, 0, 3, 0), margin = margin(0, 1, 3, 1),
-      #hi.labels = x2 %>% filter(totalPer == max(totalPer)) %>% slice(1),
-      #hi.fill = "#F4C300",
-      hi.box.col = "black"
-    ),
-    plot.caption = element_markdown(face = 'italic', margin = margin(20, 1, 1, 1)),
-    plot.title = element_markdown(face = 'bold'),
-    plot.subtitle = element_text(margin = margin(10, 10, 20, 10)),
-    plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm"),
-  )+
-  labs(title = "Percentages of total<span style='color:#6A3805'>bronze</span>medals in the <span style='color:#DF0024'>2021</span> Olympics",
-       subtitle = 'Data from Olympic Committee 2021',
-       caption = "<span style='color:#0085C7'>(C) J.M.Barnby, 2021</span>")+
-  xlab("Total Number of Medals") +
-  ylab("")
-#009F3D olympic green
-y2
-grid.raster(logo, x = 0.9, 0.9, width = unit(2, 'cm'), height = unit(2.1, 'cm'))
-
-grid.raster(gold, x = 0.46,  0.455, width = unit(0.6, 'cm'), height = unit(0.6, 'cm'))
-grid.raster(silv, x = 0.23, 0.79, width = unit(0.5, 'cm'), height = unit(0.5, 'cm'))
-grid.raster(bron, x = 0.23,  0.455, width = unit(0.6, 'cm'), height = unit(0.6, 'cm'))
+grid.raster(gold, x = 0.235, 0.822, width = unit(0.6, 'cm'), height = unit(0.6, 'cm'))
+grid.raster(silv, x = 0.48, 0.822, width = unit(0.5, 'cm'), height = unit(0.5, 'cm'))
+grid.raster(bron, x = 0.725,  0.822, width = unit(0.5, 'cm'), height = unit(0.5, 'cm'))
 
 # Total types of medals won -----------------------------------------------
 
 # Set a number of 'empty bar' to add at the end of each group
+
 long_data_filt <- long_data %>% filter(Year == '2021')
 
 empty_bar <- 2
@@ -290,111 +233,133 @@ z +
                 right = 0.7,
                 top = 0.6, on_top = F)
 
-# Change in medals per week -----------------------------------------------
-wide_data2 <-read.csv('/Users/josephbarnby/My Drive/Dropbox/Olympics2021/Sweepstake Logic Example - Sheet1 - 27:07:21.csv')
-wide_data2 <- cleanOlympic(wide_data2)
-wide_data2$day= Sys.Date()-2
-wide_data3 <-read.csv('/Users/josephbarnby/My Drive/Dropbox/Olympics2021/Sweepstake Logic Example - Sheet1 - 28:07:21.csv')
-wide_data3 <- cleanOlympic(wide_data3)
-wide_data3$day= Sys.Date()-1
-
-wide_data$day = Sys.Date()
-
-wide_data_long <- rbind(wide_data, wide_data2, wide_data3)
-
-wide_data_plot <- wide_data_long %>%
-  group_by(Name, day) %>%
-  mutate(Day = as.Date(day),
-         meanTotMed2016 = mean(TotalMed2016),
-         meanTotMed2021 = mean(TotalMed2021),
-         diffTotMed     = meanTotMed2021-meanTotMed2016,
-         perDiffTotMed  = (diffTotMed/meanTotMed2016)*100)
-
-ggplot(wide_data_plot,
-       aes(Day, perDiffTotMed, color= Name))+
-  geom_text_repel(data = wide_data_plot %>%
-                    filter(day == Sys.Date()),
-    nudge_x = 5,
-    direction = "y",
-    hjust = "right",
-    aes(label = Name),
-    max.overlaps = 0
-  ) +
-  labs(title = "Percentage change in total medals won between <br> the <span style='color:#0085C7'>2016</span> and <span style='color:#DF0024'>2021</span> Olympics",
-       subtitle = 'Data from Olympic Committee 2021',
-       caption = "<span style='color:#0085C7'>(C) J.M.Barnby, 2021</span>",
-       x = 'Date')+
-  coord_cartesian(clip = 'off')+
-  geom_line(size = 1, aes(color = ifelse(perDiffTotMed != max(perDiffTotMed), NA, Name), group = Name))+
-  geom_point(data = wide_data_plot %>% filter(day == Sys.Date()),
-             aes(color = ifelse(day != Sys.Date(), NA, '#DF0024')), size = 2)+
-  theme(legend.position = 'none',
-        plot.title = element_markdown(),
-        plot.caption = element_markdown(),
-        axis.title.y = element_blank(),
-        plot.margin = margin(0,2,0,0, unit = 'cm'),
-        panel.background = element_blank())
-
-ggplot(wide_data_plot %>% ungroup(),
-       aes(Day, PercChangeTotal))+
-  geom_text_repel(data = wide_data_plot %>%
-                    filter(day == Sys.Date()),
-                  nudge_x = 10,
-                  direction = "x",
-                  aes(label = Country),
-                  max.overlaps = 0
-  ) +
-  labs(title = "Percentage change in total medals won between <br> the <span style='color:#0085C7'>2016</span> and <span style='color:#DF0024'>2021</span> Olympics",
-       subtitle = 'Data from Olympic Committee 2021',
-       caption = "<span style='color:#0085C7'>(C) J.M.Barnby, 2021</span>",
-       x = 'Date')+
-  coord_cartesian(clip = 'off')+
-  geom_line(size = 1, aes(group = Country), color = ifelse(wide_data_plot$PercChangeTotal == max(wide_data_plot['day' == Sys.Date()]$PercChangeTotal), 'gold', 'grey'))+
-  geom_point(data = wide_data_plot %>% filter(day == Sys.Date()),
-             aes(color = ifelse(day != Sys.Date(), NA, '#DF0024')), size = 2)+
-  theme(legend.position = 'none',
-        plot.title = element_markdown(size = 16),
-        plot.caption = element_markdown(),
-        axis.title.y = element_blank(),
-        plot.margin = margin(0,2,0,0, unit = 'cm'),
-        panel.background = element_blank(),
-        axis.text = element_text(size = 14))
-
 # For Homepage ------------------------------------------------------------
 
+tiff("test.tiff", units="in", width=14, height=8, res=300)
+wide_data <- scrapeOlympic()
+wide_data <- wide_data %>%
+  mutate(`2016` = ifelse(Country == 'Japan' & Medal == 'G', 12,
+                         ifelse(Country == 'Japan' & Medal == 'S', 8,
+                                ifelse(Country == 'Japan' & Medal == 'B', 21, `2016`))),
+         TotalMed2016 = ifelse(Country == 'Japan', 12 + 8 + 21, TotalMed2016),
+         RawNoChangeTotal = ifelse(Country == 'Japan', TotalMed2021 - TotalMed2016, RawNoChangeTotal),
+         PercChangeTotal = ifelse(Country == 'Japan', RawNoChangeTotal/TotalMed2016*100, PercChangeTotal))
+wide_data <- wide_data %>% mutate(Country = ifelse(Country == 'Russia', 'ROC', Country),
+                                  Abrv    = ifelse(Abrv == 'RUS', 'ROC', Abrv))
 home <- ggplot(wide_data %>% filter(Medal == 'G')) +
   geom_segment( aes(y=reorder(Abrv, PercChangeTotal), yend=Abrv, x=0, xend=PercChangeTotal), color="dark grey", size = 1)+
   geom_vline(xintercept = 0, color = '#0085C7', size = 2)+
   geom_point( aes(x=PercChangeTotal, y=Abrv), color='#DF0024', size=5 ) +
   #geom_point( aes(x=TotalMed2016, y=Abrv), color='#0085C7', size=5 ) +
-  geom_flag(aes(x=-106, y=Abrv, country = Abrv2)) +
+  geom_flag(aes(x=-106, y=Abrv, country = ifelse(Abrv != 'ROC', Abrv2, NA))) +
+  geom_text(data = wide_data %>% filter(Medal == 'G', PercChangeTotal <= 0),
+            aes(x = PercChangeTotal, y = Abrv, label = round(PercChangeTotal,1)),
+            check_overlap = T, nudge_x = -5, size = 3)+
+  geom_text(data = wide_data %>% filter(Medal == 'G', PercChangeTotal > 0),
+            aes(x = PercChangeTotal, y = Abrv, label = round(PercChangeTotal,1)),
+            check_overlap = T, nudge_x = 5, size = 3)+
   #facet_wrap(~Name, scales = 'free_y', nrow = 2)+
   theme_void(base_family = "Poppins")+
   coord_cartesian(xlim = c(-100,100), clip = 'off')+
   scale_x_continuous(breaks = c(-100, -50, 0, 50, 100),
                      labels = c(-100, -50, 0, 50, 100))+
+  scale_y_discrete(expand = c(0,2))+
   theme(
     legend.position = "none",
     axis.text = element_text(size = 14),
     strip.background = element_blank(),
     plot.caption = element_markdown(face = 'italic', margin = margin(20, 1, 1, 10)),
-    plot.title = element_markdown(face = 'bold'),
-    plot.subtitle = element_text(margin = margin(10, 10, 20, 10)),
+    plot.title = element_markdown(face = 'bold', size = 18),
+    plot.subtitle = element_markdown(margin = margin(10,0,20,0), size = 14),
     plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm"),
     #panel.grid.major.y = element_line(size = 0.1),
-    panel.grid.major.y = element_blank(),
+    panel.grid.major.y = element_blank()
   )+
-  labs(title = "Percentage change in total medals won between <br> the <span style='color:#0085C7'>2016</span> and <span style='color:#DF0024'>2020</span> Olympics",
-       subtitle = 'Data from Olympic Committee 2021',
-       caption = "<span style='color:#0085C7'>(C) J.M.Barnby [2021] website : joebarnby.com</span>")+
+  labs(title = "Despite the challenges of the past two years, Olympic teams have gone above and beyond",
+       subtitle = "Percentage change in total medals won from the previous <br> top 25 teams between the <span style='color:#0085C7'>2016</span> and <span style='color:#DF0024'>2020</span> Olympics",
+       caption = "Data from the International Olympic Committee <br> <span style='color:#0085C7'>(C) J.M.Barnby [2021] website: joebarnby.com | Twitter: @joebarnby </span>")+
   xlab("Total Number of Medals") +
   ylab("")
 #009F3D olympic green
 home
 home+
   inset_element(p = g,# Combine plot & image
-                left = 0.6,
-                bottom = 0.5,
-                right = 1,
-                top = 1.1)
+                left = 0.1,
+                bottom = 0.4,
+                right = 0.3,
+                top = 0.9)
+dev.off()
 
+
+# World map  -------------------------------------------------
+library(rvest)
+library(wpp2019)
+
+content <- read_html("https://olympics.com/tokyo-2020/olympic-games/en/results/all-sports/medal-standings.htm")
+tables2 <- content %>% html_table(fill = TRUE)
+tables2 <- tables2[[1]]
+tables2 <- tables2 %>%
+  rename(Country = 2, G = 3, S = 4, B = 5) %>%
+  mutate(Country = ifelse(Country == 'United States of America', 'United States',
+                          ifelse(Country == "People's Republic of China", 'China',
+                                 ifelse(Country == 'ROC', 'Russia',
+                                        ifelse(Country == 'Republic of Korea', 'South Korea', Country)))),
+         Year = 2021) %>%
+  pivot_longer(3:5, 'Medal', values_to = 'Count') %>%
+  dplyr::select(2, 7, 8, 6)
+
+content2016 <- read_html('https://en.wikipedia.org/wiki/2016_Summer_Olympics_medal_table')
+tables3 <- content2016 %>% html_table(fill = TRUE)
+tables3 <- tables3[[3]]
+tables3$NOC <- gsub("\\s*\\([^\\)]+\\)","",as.character(tables3$NOC))
+cleanTable3 <- tables3 %>%
+  rename(Country = NOC) %>%
+  dplyr::select(Country, Total) %>%
+  mutate(Country = case_when(Country == 'United States' ~ 'USA',
+                             Country == 'Great Britain' ~ 'UK',TRUE ~ Country))
+
+data('pop')
+popEdit <- pop %>%
+  dplyr::select(name, `2020`)
+
+world <- map_data('world')
+world %>%
+  rename(Country = region) %>%
+  plyr::join(tables2 %>%
+               mutate(Country = case_when(Country == 'United States' ~ "USA",
+                                          Country == 'Great Britain' ~ "UK", TRUE ~ Country)) %>%
+               group_by(Country) %>%
+               mutate(Tot = sum(Count)),
+             type = 'left', by = 'Country') %>%
+  plyr::join(popEdit %>%
+               rename(Country = 1, Pop = 2) %>%
+               mutate(Country = case_when(Country == 'United States of America' ~ 'USA',
+                                          Country == 'United Kingdom' ~ 'UK',
+                                          Country == 'Russian Federation' ~ 'Russia', TRUE ~ Country)),
+             by = 'Country') %>%
+  plyr::join(cleanTable3,
+             by = 'Country') %>%
+  distinct() %>%
+  mutate(Tot = ifelse(is.na(Tot), 0, Tot)) %>%
+  group_by(Country) %>%
+  mutate(Perc = ((Tot-Total)/Total)*100,
+         Perc = ifelse(is.na(Perc), 0, Perc),
+         PerPop = Tot/(Pop),
+         PerPop = ifelse(is.na(PerPop), 0, PerPop),
+         logPop = log10(PerPop),
+         logPop = ifelse(logPop == -Inf, -100, logPop)) -> worldPlot
+
+filtered <- worldPlot %>%
+  filter(PerPop != 0)
+
+ggplot(worldPlot %>%
+         filter(Country %in% filtered$Country,
+                Year == 2021)) +
+    geom_map(
+           map = world,
+            aes(long, lat, map_id = Country, fill = PerPop)
+        )+
+  scale_fill_gradient(low = 'white', high = '#009F3D', trans = 'log')+
+  theme_map()+
+  theme(legend.position = 'none',
+        legend.title = element_blank())
