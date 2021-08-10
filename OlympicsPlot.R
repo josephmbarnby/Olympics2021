@@ -105,59 +105,6 @@ x <- wide_data %>%
   arrange(-totalPer) %>%
   slice(1:3)
 
-y <- ggplot(wide_data %>% filter(Medal == 'G'),
-            aes(y=reorder(Abrv, PercChangeTotal))) +
-  #background_image(logo)+
-  geom_segment( aes(yend=reorder(Abrv, PercChangeTotal), x=0, xend=PercChangeTotal), color="grey")+
-  geom_vline(xintercept = 0, color = '#0085C7')+
-  geom_point( aes(x=PercChangeTotal), color= '#DF0024', size=5 ) +
-  geom_point(data = wide_data %>% filter(PercChangeTotal == max(PercChangeTotal), PercChangeTotal != -100),
-             aes(x=PercChangeTotal), color= '#F4C300', size=5 ) +
-  geom_flag(aes(x=-145, country = Abrv2)) +
-  facet_wrap(~reorder(Name, -TotalPercTotal), scales = 'free_y', nrow = 2)+
-  theme_void(base_family = "Poppins")+
-  coord_cartesian(xlim = c(-150,150), clip = 'off')+
-  scale_x_continuous(breaks = c(-100, -50, 0, 50, 100), labels = c(-100, "", 0, "", 100))+
-  geom_text_repel(aes(x = PercChangeTotal, y = Abrv,
-                       label = ifelse(PercChangeTotal == max(PercChangeTotal), 'Best relative
-performance', NA)),
-                   size = 3, arrow = arrow(type = 'closed', length = unit(0.1, 'cm')),
-                   box.padding = unit(0.35, "lines"), point.padding = unit(0.5, "lines"),
-                   segment.color = 'black', family = 'Poppins', max.overlaps = Inf,
-                   nudge_x = 400,
-                   nudge_y = -0.5,
-                   )+
-  geom_text(aes(x = PercChangeTotal, y = Abrv, label = round(PercChangeTotal,1)),
-            check_overlap = T, nudge_y = 0.3, size = 3)+
-  theme(
-    legend.position = "none",
-    axis.text = element_text(size = 14),
-    strip.background = element_blank(),
-    strip.text = element_textbox_highlight(
-      size = 12,
-      fill = "white", box.color = "black", color = "black",
-      halign = .5, linetype = 1, r = unit(5, "pt"), width = unit(2, "npc"),
-      padding = margin(5, 0, 3, 0), margin = margin(0, 1, 3, 1),
-      #hi.labels = x[1], hi.fill = "#F4C300",
-      hi.box.col = "black"
-    ),
-    plot.caption = element_markdown(face = 'italic', margin = margin(20, 5, 5, 5)),
-    plot.title = element_markdown(face = 'bold'),
-    plot.subtitle = element_text(margin = margin(10, 10, 20, 10)),
-    plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm"),
-  )+
-  labs(title = "Percentage change in total medals won between <br> the <span style='color:#0085C7'>2016</span> and <span style='color:#DF0024'>2021</span> Olympics",
-       subtitle = 'Data from Olympic Committee 2021',
-       caption = "<span style='color:#0085C7'>(C) J.M.Barnby, 2021</span>")+
-  xlab("Total Number of Medals") +
-  ylab("")
-#009F3D olympic green
-y
-grid.raster(logo, x = 0.89, 0.92, width = unit(2.7, 'cm'), height = unit(2.8, 'cm'))
-
-grid.raster(gold, x = 0.235, 0.822, width = unit(0.6, 'cm'), height = unit(0.6, 'cm'))
-grid.raster(silv, x = 0.48, 0.822, width = unit(0.5, 'cm'), height = unit(0.5, 'cm'))
-grid.raster(bron, x = 0.725,  0.822, width = unit(0.5, 'cm'), height = unit(0.5, 'cm'))
 
 # Total types of medals won -----------------------------------------------
 
